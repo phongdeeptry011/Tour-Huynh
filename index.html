@@ -1,227 +1,213 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Quản lý tour Như Huỳnh</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f7f9fc; }
-    h2 { margin-bottom: 10px; }
-    .dashboard { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-    .card { flex: 1; min-width: 180px; background: #fff; padding: 15px; border-radius: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center; }
-    .card h3 { margin: 0; font-size: 18px; color: #333; }
-    .card p { font-size: 20px; font-weight: bold; color: #007bff; }
-    .form-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-    input { padding: 8px; border: 1px solid #ccc; border-radius: 6px; flex: 1; }
-    button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-add { background: #4e6ef2; color: white; }
-    .btn-del { background: #e74c3c; color: white; }
-    .btn-edit { background: #f39c12; color: white; }
-    table { width: 100%; border-collapse: collapse; background: white; }
-    th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
-    th { background: #f1f1f1; }
-    .edit-panel {
-      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      z-index: 999; width: 320px;
-    }
-    .overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index: 998; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Quản lý tour spa</title>
+<style>
+  body{margin:0;font-family:sans-serif;background:#f6f7fb;color:#111}
+  header{padding:20px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.06);position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+  h1{margin:0;font-size:18px}
+  .wrap{max-width:1100px;margin:20px auto;padding:0 16px}
+  form{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;background:#fff;padding:14px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+  input,button,textarea{padding:10px;border:1px solid #ddd;border-radius:10px;font-size:14px}
+  button{cursor:pointer;background:#4f46e5;color:#fff;border:none}
+  button.danger{background:#e54d4d}
+  table{width:100%;border-collapse:collapse;margin-top:14px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+  th,td{padding:10px;border-bottom:1px solid #eee;font-size:14px;text-align:left}
+  th{background:#fafafa}
+  tr:hover{background:#f9f9ff}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:18px 0}
+  .card{background:#fff;padding:14px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+  .card h3{margin:0;font-size:15px;color:#666}
+  .card p{margin:6px 0 0;font-weight:bold;font-size:18px}
+  #editPanel{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center}
+  #editPanel .inner{background:#fff;padding:20px;border-radius:12px;width:90%;max-width:400px;display:grid;gap:10px}
+</style>
 </head>
 <body>
-  <h2>Quản lý tour Như Huỳnh</h2>
-
-  <!-- Dashboard -->
-  <div class="dashboard">
-    <div class="card"><h3>Hôm nay</h3><p id="todayTotal">0 đ</p></div>
-    <div class="card"><h3>Hôm qua</h3><p id="yesterdayTotal">0 đ</p></div>
-    <div class="card"><h3>Tuần này</h3><p id="weekTotal">0 đ</p></div>
-    <div class="card"><h3>Tháng này</h3><p id="monthTotal">0 đ</p></div>
+<header>
+  <h1>Quản lý tour Như Huỳnh</h1>
+  <div>
+    Ngày: <input type="date" id="datePicker" />
+    <span id="dayTotal" style="margin-left:10px;background:#f3f4f6;padding:6px 10px;border-radius:8px">Tổng ngày này: 0 đ</span>
+  </div>
+</header>
+<div class="wrap">
+  <div class="cards">
+    <div class="card"><h3>Hôm nay</h3><p id="todaySum">0 đ</p></div>
+    <div class="card"><h3>Hôm qua</h3><p id="yesterdaySum">0 đ</p></div>
+    <div class="card"><h3>Tuần này</h3><p id="weekSum">0 đ</p></div>
+    <div class="card"><h3>Tháng này</h3><p id="monthSum">0 đ</p></div>
   </div>
 
-  <!-- Form -->
-  <div class="form-group">
-    <input id="name" placeholder="Tên khách hàng *">
-    <input id="phone" placeholder="Số điện thoại (tùy chọn)">
-    <input id="service" placeholder="Loại dịch vụ *">
-    <input id="price" type="number" placeholder="Giá tiền *">
-    <input id="note" placeholder="Ghi chú">
-    <button class="btn-add" onclick="addTour()">Thêm</button>
+  <form id="addForm">
+    <input id="name" placeholder="Tên khách hàng *" required />
+    <input id="phone" placeholder="Số điện thoại (tùy chọn)" />
+    <input id="service" placeholder="Loại dịch vụ *" required />
+    <input id="price" placeholder="Giá tiền *" required type="number" />
+    <input id="note" placeholder="Ghi chú" />
+    <button type="submit">Thêm</button>
+  </form>
+
+  <div style="margin:12px 0;display:flex;gap:10px;flex-wrap:wrap">
+    <input id="search" placeholder="Tìm theo tên / SĐT / dịch vụ..." style="flex:1" />
+    <button id="export">Xuất CSV</button>
+    <button id="clear" class="danger">Xóa tất cả (ngày này)</button>
   </div>
 
-  <!-- Table -->
   <table>
     <thead>
       <tr>
-        <th>#</th>
-        <th>Tên KH</th>
-        <th>SDT</th>
-        <th>Dịch vụ</th>
-        <th>Giá tiền</th>
-        <th>Ghi chú</th>
-        <th>Ngày</th>
-        <th>Hành động</th>
+        <th>#</th><th>Tên KH</th><th>SĐT</th><th>Dịch vụ</th><th>Giá tiền</th><th>Ghi chú</th><th>Thời gian</th><th>Hành động</th>
       </tr>
     </thead>
-    <tbody id="tourTable"><tr><td colspan="8">Chưa có dữ liệu</td></tr></tbody>
+    <tbody id="tbody"><tr><td colspan="8">Chưa có dữ liệu</td></tr></tbody>
   </table>
+</div>
 
-  <!-- Edit Panel -->
-  <div class="overlay" id="overlay"></div>
-  <div class="edit-panel" id="editPanel">
-    <h3>Sửa thông tin tour</h3>
-    <input id="editName" placeholder="Tên khách hàng">
-    <input id="editPhone" placeholder="Số điện thoại">
-    <input id="editService" placeholder="Dịch vụ">
-    <input id="editPrice" type="number" placeholder="Giá tiền">
-    <input id="editNote" placeholder="Ghi chú">
-    <button class="btn-add" onclick="saveEdit()">Lưu</button>
-    <button class="btn-del" onclick="closeEdit()">Hủy</button>
+<!-- Panel sửa -->
+<div id="editPanel">
+  <div class="inner">
+    <h3>Sửa thông tin</h3>
+    <input id="editName" />
+    <input id="editPhone" />
+    <input id="editService" />
+    <input id="editPrice" type="number" />
+    <input id="editNote" />
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button id="saveEdit">Lưu</button>
+      <button type="button" onclick="closeEdit()">Hủy</button>
+    </div>
   </div>
+</div>
 
-  <!-- Firebase + App Logic -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } 
-      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbylmUK3QNEcebUguLbLCQv-W9LZzvBn5oJ3gDzZ6UdRAth_Nhcs9V0vbilCbxQnQYcm/exec";
 
-    // 🔥 Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyCUl6KMtiZZdqHPCp6SYVIAp6BTAfUJx2I",
-      authDomain: "tour-manager-faa53.firebaseapp.com",
-      projectId: "tour-manager-faa53",
-      storageBucket: "tour-manager-faa53.appspot.com",
-      messagingSenderId: "897754227514",
-      appId: "1:897754227514:web:3f57ebcefea47a35e6a603"
-    };
+let rows = [], editIndex = null;
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+function formatMoney(n){return n.toLocaleString("vi-VN")+" đ";}
+function todayStr(){return new Date().toISOString().slice(0,10);}
 
-    const table = document.getElementById("tourTable");
-    let editId = null;
+// ---- LOAD & SAVE ----
+async function loadRows(){
+  const d=document.getElementById("datePicker").value;
+  try {
+    const res=await fetch(`${API_URL}?action=get&date=${d}`);
+    rows=await res.json();
+  } catch(e){ console.error(e); rows=[]; }
+}
 
-    // 📌 Thêm tour
-    async function addTour() {
-      let name = document.getElementById("name").value.trim();
-      let phone = document.getElementById("phone").value.trim();
-      let service = document.getElementById("service").value.trim();
-      let price = document.getElementById("price").value.trim();
-      let note = document.getElementById("note").value.trim();
+async function saveRow(row){ try { await fetch(`${API_URL}?action=add`,{method:"POST",body:JSON.stringify(row)}); } catch(e){console.error(e);} }
+async function deleteRow(i){ try { await fetch(`${API_URL}?action=delete&date=${rows[i].date}&time=${rows[i].time}`); } catch(e){console.error(e);} }
+async function updateRow(i,row){ try { await fetch(`${API_URL}?action=update`,{method:"POST",body:JSON.stringify({...row,oldDate:rows[i].date,oldTime:rows[i].time})}); } catch(e){console.error(e);} }
 
-      if (!name || !service || !price) {
-        alert("Vui lòng nhập đầy đủ thông tin bắt buộc!");
-        return;
-      }
+// ---- RENDER ----
+function render(){
+  const tb=document.getElementById("tbody"); tb.innerHTML="";
+  const q=document.getElementById("search").value.toLowerCase();
+  const filtered=rows.filter(r=>(r.name+" "+r.phone+" "+r.service).toLowerCase().includes(q));
+  if(!filtered.length){ tb.innerHTML="<tr><td colspan=8>Chưa có dữ liệu</td></tr>"; } 
+  else{
+    filtered.forEach((r,i)=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${i+1}</td>
+                    <td>${r.name}</td>
+                    <td>${r.phone||""}</td>
+                    <td>${r.service}</td>
+                    <td>${formatMoney(parseFloat(r.price||0))}</td>
+                    <td>${r.note||""}</td>
+                    <td>${r.time}</td>
+                    <td><button onclick="openEdit(${i})">Sửa</button> <button onclick="del(${i})">Xóa</button></td>`;
+      tb.appendChild(tr);
+    });
+  }
+  calcSums();
+}
 
-      let today = new Date().toISOString().split("T")[0];
-      await addDoc(collection(db, "tours"), { name, phone, service, price: Number(price), note, date: today });
+// ---- TÍNH TỔNG ----
+function calcSums(){
+  const today=new Date();
+  const yesterday=new Date(today); yesterday.setDate(today.getDate()-1);
+  const startOfWeek=new Date(today); startOfWeek.setDate(today.getDate() - today.getDay() +1);
+  const monthStart=new Date(today.getFullYear(),today.getMonth(),1);
+  const formatDate=d=>d.toISOString().slice(0,10);
 
-      document.getElementById("name").value = "";
-      document.getElementById("phone").value = "";
-      document.getElementById("service").value = "";
-      document.getElementById("price").value = "";
-      document.getElementById("note").value = "";
+  const todaySumVal=rows.filter(r=>r.date===formatDate(today)).reduce((a,b)=>a+parseFloat(b.price||0),0);
+  const yesterdaySumVal=rows.filter(r=>r.date===formatDate(yesterday)).reduce((a,b)=>a+parseFloat(b.price||0),0);
+  const weekSumVal=rows.filter(r=>new Date(r.date)>=startOfWeek).reduce((a,b)=>a+parseFloat(b.price||0),0);
+  const monthSumVal=rows.filter(r=>new Date(r.date)>=monthStart).reduce((a,b)=>a+parseFloat(b.price||0),0);
 
-      loadTours();
-    }
+  document.getElementById("dayTotal").textContent="Tổng ngày này: "+formatMoney(todaySumVal);
+  document.getElementById("todaySum").textContent=formatMoney(todaySumVal);
+  document.getElementById("yesterdaySum").textContent=formatMoney(yesterdaySumVal);
+  document.getElementById("weekSum").textContent=formatMoney(weekSumVal);
+  document.getElementById("monthSum").textContent=formatMoney(monthSumVal);
+}
 
-    // 📌 Hiển thị tour
-    async function loadTours() {
-      const snapshot = await getDocs(collection(db, "tours"));
-      let data = [];
-      snapshot.forEach(docSnap => {
-        data.push({ id: docSnap.id, ...docSnap.data() });
-      });
+// ---- FORM THÊM ----
+document.getElementById("addForm").onsubmit=async e=>{
+  e.preventDefault();
+  const name=document.getElementById("name").value.trim();
+  const phone=document.getElementById("phone").value.trim();
+  const service=document.getElementById("service").value.trim();
+  const price=parseFloat(document.getElementById("price").value)||0;
+  const note=document.getElementById("note").value.trim();
+  if(!name||!service||!price){alert("Vui lòng nhập đủ tên, dịch vụ, giá");return;}
+  const now=new Date();
+  const row={name,phone,service,price,note,date:now.toISOString().slice(0,10),time:now.toLocaleTimeString("vi-VN")};
+  await saveRow(row); await loadRows(); render(); e.target.reset();
+};
 
-      if (data.length === 0) {
-        table.innerHTML = "<tr><td colspan='8'>Chưa có dữ liệu</td></tr>";
-        return;
-      }
+// ---- XÓA ----
+async function del(i){ if(confirm("Xóa mục này?")){await deleteRow(i); await loadRows(); render();} }
 
-      let html = "";
-      data.forEach((t, i) => {
-        html += `<tr>
-          <td>${i+1}</td>
-          <td>${t.name}</td>
-          <td>${t.phone || ""}</td>
-          <td>${t.service}</td>
-          <td>${t.price.toLocaleString()} đ</td>
-          <td>${t.note || ""}</td>
-          <td>${t.date}</td>
-          <td>
-            <button class="btn-edit" onclick="openEdit('${t.id}','${t.name}','${t.phone || ""}','${t.service}','${t.price}','${t.note || ""}')">Sửa</button>
-            <button class="btn-del" onclick="deleteTour('${t.id}')">Xóa</button>
-          </td>
-        </tr>`;
-      });
-      table.innerHTML = html;
+// ---- XÓA TẤT CẢ ----
+document.getElementById("clear").onclick=async()=>{
+  if(confirm("Xóa tất cả?")){ await Promise.all(rows.map((_,i)=>deleteRow(i))); rows=[]; render(); }
+};
 
-      updateDashboard(data);
-    }
+// ---- TÌM KIẾM ----
+document.getElementById("search").oninput=render;
 
-    // 📌 Xóa tour
-    async function deleteTour(id) {
-      if (confirm("Bạn có chắc chắn muốn xóa?")) {
-        await deleteDoc(doc(db, "tours", id));
-        loadTours();
-      }
-    }
+// ---- XUẤT CSV ----
+document.getElementById("export").onclick=()=>{
+  if(!rows.length){alert("Không có dữ liệu"); return;}
+  let csv="Tên,SDT,Dịch vụ,Giá tiền,Ghi chú,Thời gian\n";
+  rows.forEach(r=>{csv+=`"${r.name}","${r.phone}","${r.service}","${r.price}","${r.note||''}","${r.time}"\n`;});
+  const blob=new Blob([csv],{type:"text/csv"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="data.csv"; a.click(); URL.revokeObjectURL(url);
+};
 
-    // 📌 Mở panel sửa
-    window.openEdit = function(id, name, phone, service, price, note) {
-      editId = id;
-      document.getElementById("editName").value = name;
-      document.getElementById("editPhone").value = phone;
-      document.getElementById("editService").value = service;
-      document.getElementById("editPrice").value = price;
-      document.getElementById("editNote").value = note;
-      document.getElementById("editPanel").style.display = "block";
-      document.getElementById("overlay").style.display = "block";
-    };
+// ---- PANEL SỬA ----
+function openEdit(i){ editIndex=i; const r=rows[i];
+  document.getElementById("editName").value=r.name;
+  document.getElementById("editPhone").value=r.phone;
+  document.getElementById("editService").value=r.service;
+  document.getElementById("editPrice").value=r.price;
+  document.getElementById("editNote").value=r.note||"";
+  document.getElementById("editPanel").style.display="flex";
+}
+function closeEdit(){ document.getElementById("editPanel").style.display="none"; }
+document.getElementById("saveEdit").onclick=async()=>{
+  const r=rows[editIndex];
+  r.name=document.getElementById("editName").value.trim();
+  r.phone=document.getElementById("editPhone").value.trim();
+  r.service=document.getElementById("editService").value.trim();
+  r.price=parseFloat(document.getElementById("editPrice").value)||0;
+  r.note=document.getElementById("editNote").value.trim();
+  await updateRow(editIndex,r);
+  await loadRows(); render(); closeEdit();
+};
 
-    // 📌 Đóng panel
-    window.closeEdit = function() {
-      document.getElementById("editPanel").style.display = "none";
-      document.getElementById("overlay").style.display = "none";
-    };
+// ---- NGÀY HIỆN TẠI ----
+document.getElementById("datePicker").value=todayStr();
+document.getElementById("datePicker").onchange=async()=>{await loadRows(); render();};
 
-    // 📌 Lưu chỉnh sửa
-    window.saveEdit = async function() {
-      let name = document.getElementById("editName").value.trim();
-      let phone = document.getElementById("editPhone").value.trim();
-      let service = document.getElementById("editService").value.trim();
-      let price = Number(document.getElementById("editPrice").value.trim());
-      let note = document.getElementById("editNote").value.trim();
-
-      await updateDoc(doc(db, "tours", editId), { name, phone, service, price, note });
-      closeEdit();
-      loadTours();
-    };
-
-    // 📌 Dashboard
-    function updateDashboard(data) {
-      let today = new Date().toISOString().split("T")[0];
-      let yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-      let weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-      let monthStart = new Date(); monthStart.setDate(1);
-
-      let todayTotal = data.filter(t=>t.date===today).reduce((s,t)=>s+t.price,0);
-      let yesterdayTotal = data.filter(t=>t.date===yesterday).reduce((s,t)=>s+t.price,0);
-      let weekTotal = data.filter(t=>new Date(t.date)>=weekStart).reduce((s,t)=>s+t.price,0);
-      let monthTotal = data.filter(t=>new Date(t.date)>=monthStart).reduce((s,t)=>s+t.price,0);
-
-      document.getElementById("todayTotal").innerText = todayTotal.toLocaleString()+" đ";
-      document.getElementById("yesterdayTotal").innerText = yesterdayTotal.toLocaleString()+" đ";
-      document.getElementById("weekTotal").innerText = weekTotal.toLocaleString()+" đ";
-      document.getElementById("monthTotal").innerText = monthTotal.toLocaleString()+" đ";
-    }
-
-    // 🚀 Load ban đầu
-    loadTours();
-    window.addTour = addTour;
-    window.deleteTour = deleteTour;
-  </script>
+// ---- INIT ----
+(async()=>{ await loadRows(); render(); })();
+</script>
 </body>
 </html>
