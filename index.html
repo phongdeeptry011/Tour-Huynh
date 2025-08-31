@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Quản lý tour Như Huỳnh</title>
+<style>
+  :root{--radius:14px;--pad:14px;--gap:10px;--brand:#5865f2;--bg:#f6f7fb;--card:#fff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:#111;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  header{padding:16px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.06);position:sticky;top:0;z-index:20}
+  .head-wrap{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+  h1{margin:0;font-size:18px}
+  .muted{color:#666;font-size:12px}
+  .wrap{max-width:1100px;margin:18px auto;padding:0 16px}
+
+  /* Top controls */
+  .topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 6px}
+  .date-group{display:flex;gap:8px;align-items:center;background:#fff;padding:10px;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.04)}
+  .date-group input[type="date"]{padding:10px;border:1px solid #e3e6ef;border-radius:10px;font-size:14px}
+  .chip{background:#eef1ff;border-radius:999px;padding:6px 10px;font-size:12px;color:#3b46c6;white-space:nowrap}
+
+  /* Dashboard */
+  .dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0}
+  .card{background:var(--card);padding:14px;border-radius:var(--radius);box-shadow:0 2px 10px rgba(0,0,0,.05)}
+  .card h3{margin:0 0 4px;font-size:14px;color:#555}
+  .card p{margin:0;font-size:20px;font-weight:700}
+
+  /* Form */
+  form#entryForm{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--gap);background:var(--card);padding:var(--pad);border-radius:var(--radius);box-shadow:0 2px 10px rgba(0,0,0,.05);align-items:center}
+  input,button{padding:12px;border:1px solid #ddd;border-radius:10px;font-size:14px}
+  input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(88,101,242,.15)}
+  button{border:none;cursor:pointer}
+  .btn-primary{background:var(--brand);color:#fff}
+  .btn-secondary{background:#eee}
+  .btn-danger{background:#ff4d4f;color:#fff}
+
+  /* Toolbar */
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+  .toolbar input{flex:1;min-width:220px}
+
+  /* Table */
+  table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+  th,td{padding:12px 10px;border-bottom:1px solid #f0f0f0;font-size:14px;text-align:left}
+  th{background:#fafbff;font-weight:600}
+  tr:last-child td{border-bottom:none}
+  .pill{padding:4px 8px;border-radius:999px;background:#eef1ff;display:inline-block}
+  .row-actions{display:flex;gap:6px}
+  .empty{padding:22px;text-align:center;color:#777}
+
+  /* Modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal-content{background:#fff;padding:18px;border-radius:14px;width:420px;max-width:92vw;box-shadow:0 12px 30px rgba(0,0,0,.25);animation:pop .12s ease}
+  @keyframes pop{from{transform:scale(.96);opacity:.6}to{transform:scale(1);opacity:1}}
+  .modal-content h2{margin:0 0 10px;font-size:18px}
+  .modal-grid{display:grid;grid-template-columns:1fr;gap:10px}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+
+  /* Responsive */
+  @media (max-width: 900px){
+    .dashboard{grid-template-columns:repeat(2,1fr)}
+    form#entryForm{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width: 520px){
+    .dashboard{grid-template-columns:1fr}
+    .row-actions{flex-direction:column}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="head-wrap">
+      <div>
+        <h1>Quản lý tour Như Huỳnh</h1>
+        <div class="muted">Chọn ngày để nhập và xem lại • Dữ liệu lưu theo ngày trong trình duyệt</div>
+      </div>
+      <div class="date-group">
+        <label class="muted" for="datePicker">Ngày:</label>
+        <input type="date" id="datePicker" />
+        <span id="selectedSum" class="chip">Tổng ngày này: 0 đ</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <!-- Dashboard (theo lịch thực tế) -->
+    <div class="dashboard">
+      <div class="card"><h3>Hôm nay</h3><p id="sumToday">0 đ</p></div>
+      <div class="card"><h3>Hôm qua</h3><p id="sumYesterday">0 đ</p></div>
+      <div class="card"><h3>Tuần này</h3><p id="sumWeek">0 đ</p></div>
+      <div class="card"><h3>Tháng này</h3><p id="sumMonth">0 đ</p></div>
+    </div>
+
+    <!-- Form nhập cho NGÀY ĐANG CHỌN -->
+    <form id="entryForm" autocomplete="off">
+      <input id="name" placeholder="Tên khách hàng *" required />
+      <input id="phone" placeholder="Số điện thoại *" required />
+      <input id="service" placeholder="Loại dịch vụ *" required />
+      <input id="price" type="number" placeholder="Giá tiền *" required />
+      <button class="btn-primary" type="submit">Thêm</button>
+    </form>
+
+    <div class="toolbar">
+      <input id="search" placeholder="Tìm theo tên / SĐT / dịch vụ..." />
+      <button id="exportCsv" class="btn-secondary">Xuất CSV</button>
+      <button id="clearAll" class="btn-danger" title="Xóa toàn bộ dữ liệu NGÀY đang chọn">Xóa tất cả (ngày này)</button>
+    </div>
+
+    <!-- Bảng dữ liệu của NGÀY ĐANG CHỌN -->
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th style="width:52px">#</th>
+          <th>Tên KH</th>
+          <th>SĐT</th>
+          <th>Dịch vụ</th>
+          <th>Giá tiền</th>
+          <th>Thời gian</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr class="empty"><td colspan="7">Chưa có dữ liệu</td></tr>
+      </tbody>
+    </table>
+
+  </div>
+
+  <!-- Modal sửa -->
+  <div class="modal" id="editModal">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+      <h2 id="editTitle">Sửa thông tin</h2>
+      <div class="modal-grid">
+        <input id="editName" placeholder="Tên khách hàng *" />
+        <input id="editPhone" placeholder="Số điện thoại *" />
+        <input id="editService" placeholder="Loại dịch vụ *" />
+        <input id="editPrice" type="number" placeholder="Giá tiền *" />
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="cancelEdit" class="btn-secondary">Hủy</button>
+        <button type="button" id="saveEdit" class="btn-primary">Lưu</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ========= Helpers ========= */
+const $ = (s)=>document.querySelector(s);
+const todayISO = ()=> new Date().toISOString().slice(0,10);
+const toISODate = (d)=> d.toISOString().slice(0,10);
+const keyFor = (date)=> "spaTourRows_"+date;
+function formatTime(iso){const d=new Date(iso);return d.toLocaleString("vi-VN")}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+function validatePhone(p){const c=(p||"").replace(/[^\d]/g,"");return c.length>=9&&c.length<=12}
+
+/* ========= State ========= */
+const datePicker = $("#datePicker");
+const selectedSum = $("#selectedSum");
+const tbody = $("#tbody");
+const searchEl = $("#search");
+const exportBtn = $("#exportCsv");
+const clearBtn = $("#clearAll");
+const form = $("#entryForm");
+const nameEl=$("#name"), phoneEl=$("#phone"), serviceEl=$("#service"), priceEl=$("#price");
+const sumTodayEl=$("#sumToday"), sumYesterdayEl=$("#sumYesterday"), sumWeekEl=$("#sumWeek"), sumMonthEl=$("#sumMonth");
+
+// Modal
+const editModal=$("#editModal");
+const editName=$("#editName"), editPhone=$("#editPhone"), editService=$("#editService"), editPrice=$("#editPrice");
+const cancelEdit=$("#cancelEdit"), saveEdit=$("#saveEdit");
+let editingId=null;
+
+let rows=[]; // dữ liệu của NGÀY ĐANG CHỌN
+
+/* ========= Init ========= */
+datePicker.value = todayISO();
+loadRows(); render(rows); updateDashboard(); updateSelectedDaySum();
+
+/* ========= Storage per day ========= */
+function loadRows(){
+  try{ rows = JSON.parse(localStorage.getItem(keyFor(datePicker.value)))||[]; }
+  catch(e){ rows=[]; }
+}
+function saveRows(){
+  localStorage.setItem(keyFor(datePicker.value), JSON.stringify(rows));
+}
+
+/* ========= Render ========= */
+function render(list){
+  tbody.innerHTML="";
+  if(!list.length){
+    tbody.innerHTML = `<tr class="empty"><td colspan="7">Chưa có dữ liệu</td></tr>`;
+    updateSelectedDaySum();
+    return;
+  }
+  list.forEach((r,i)=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td>${escapeHtml(r.name)}</td>
+      <td>${escapeHtml(r.phone)}</td>
+      <td><span class="pill">${escapeHtml(r.service)}</span></td>
+      <td>${(r.price||0).toLocaleString("vi-VN")} đ</td>
+      <td class="muted">${formatTime(r.createdAt)}</td>
+      <td class="row-actions">
+        <button data-id="${r.id}" data-act="edit" class="btn-secondary">Sửa</button>
+        <button data-id="${r.id}" data-act="del" class="btn-danger">Xóa</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  updateSelectedDaySum();
+}
+
+/* ========= Add ========= */
+form.addEventListener("submit",(e)=>{
+  e.preventDefault();
+  const name=nameEl.value.trim();
+  const phone=phoneEl.value.trim();
+  const service=serviceEl.value.trim();
+  const price=parseFloat(priceEl.value);
+  if(!name||!phone||!service||!(price>=0)) return alert("Vui lòng nhập đầy đủ Tên, SĐT, Dịch vụ và Giá.");
+  if(!validatePhone(phone)) return alert("Số điện thoại chưa đúng định dạng (9–12 chữ số).");
+  rows.unshift({id:crypto.randomUUID(),name,phone,service,price,createdAt:new Date().toISOString()});
+  saveRows();
+  form.reset();
+  nameEl.focus();
+  applyFilter(); // giữ filter nếu đang search
+});
+
+/* ========= Row actions ========= */
+tbody.addEventListener("click",(e)=>{
+  const btn=e.target.closest("button"); if(!btn) return;
+  const id=btn.dataset.id, act=btn.dataset.act;
+  const idx=rows.findIndex(r=>r.id===id); if(idx<0) return;
+
+  if(act==="del"){
+    if(confirm("Xóa mục này?")){
+      rows.splice(idx,1); saveRows(); applyFilter();
+    }
+  }else if(act==="edit"){
+    editingId=id;
+    const r=rows[idx];
+    editName.value=r.name; editPhone.value=r.phone; editService.value=r.service; editPrice.value=r.price;
+    showModal(true);
+  }
+});
+
+cancelEdit.addEventListener("click",()=>showModal(false));
+editModal.addEventListener("click",(e)=>{ if(e.target===editModal) showModal(false); });
+function showModal(v){ editModal.style.display = v ? "flex":"none"; if(!v) editingId=null; }
+
+saveEdit.addEventListener("click",()=>{
+  if(!editingId) return;
+  const idx=rows.findIndex(r=>r.id===editingId); if(idx<0) return;
+  const name=editName.value.trim(), phone=editPhone.value.trim(), service=editService.value.trim(), price=parseFloat(editPrice.value);
+  if(!name||!phone||!service||!(price>=0)) return alert("Vui lòng nhập đủ thông tin.");
+  if(!validatePhone(phone)) return alert("SĐT chưa đúng định dạng (9–12 chữ số).");
+  rows[idx]={...rows[idx], name, phone, service, price};
+  saveRows(); applyFilter(); showModal(false);
+});
+
+/* ========= Search ========= */
+searchEl.addEventListener("input", applyFilter);
+function applyFilter(){
+  const q=searchEl.value.trim().toLowerCase();
+  if(!q){ render(rows); return; }
+  const filtered = rows.filter(r =>
+    r.name.toLowerCase().includes(q) ||
+    r.phone.toLowerCase().includes(q) ||
+    r.service.toLowerCase().includes(q)
+  );
+  render(filtered);
+}
+
+/* ========= Export CSV (ngày đang chọn) ========= */
+exportBtn.addEventListener("click", ()=>{
+  if(!rows.length) return alert("Chưa có dữ liệu để xuất.");
+  const header=["STT","Tên KH","SĐT","Dịch vụ","Giá tiền","Thời gian"];
+  const csv=[header.join(",")];
+  rows.forEach((r,i)=>{
+    csv.push([
+      i+1,
+      `"${String(r.name).replace(/"/g,'""')}"`,
+      `"${String(r.phone).replace(/"/g,'""')}"`,
+      `"${String(r.service).replace(/"/g,'""')}"`,
+      r.price,
+      `"${formatTime(r.createdAt)}"`
+    ].join(","));
+  });
+  const blob=new Blob([csv.join("\n")],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=`tour_spa_${datePicker.value}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+/* ========= Clear all (ngày đang chọn) ========= */
+clearBtn.addEventListener("click", ()=>{
+  if(!rows.length) return;
+  if(confirm(`Xóa toàn bộ dữ liệu của ngày ${datePicker.value}?`)){
+    rows=[]; saveRows(); render(rows);
+  }
+});
+
+/* ========= Date change ========= */
+datePicker.addEventListener("change", ()=>{
+  loadRows(); render(rows); updateSelectedDaySum();
+});
+
+/* ========= Dashboard (theo lịch thực) ========= */
+function updateDashboard(){
+  // Hôm nay / Hôm qua / Tuần này / Tháng này tính từ tất cả keys trong localStorage
+  const prefix="spaTourRows_";
+  const all = []; // {date: 'YYYY-MM-DD', priceSum: number}
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(!k || !k.startsWith(prefix)) continue;
+    const date=k.slice(prefix.length);
+    // kiểm tra date hợp lệ
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    try{
+      const items=JSON.parse(localStorage.getItem(k))||[];
+      const s=items.reduce((a,b)=>a+(Number(b.price)||0),0);
+      all.push({date, sum:s});
+    }catch{}
+  }
+
+  const today = new Date();
+  const todayStr = toISODate(today);
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
+  const yesterdayStr = toISODate(yesterday);
+
+  const weekStart = new Date(today); // CN=0
+  weekStart.setHours(0,0,0,0);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // đầu tuần (Chủ nhật)
+
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const toDateObj = (s)=>{ const [Y,M,D]=s.split("-").map(Number); return new Date(Y,M-1,D); };
+
+  const todaySum = (all.find(x=>x.date===todayStr)?.sum)||0;
+  const ySum = (all.find(x=>x.date===yesterdayStr)?.sum)||0;
+
+  let weekSum=0, monthSum=0;
+  all.forEach(x=>{
+    const d = toDateObj(x.date);
+    if(d>=weekStart && d<=today) weekSum+=x.sum;
+    if(d>=monthStart && d<=today) monthSum+=x.sum;
+  });
+
+  sumTodayEl.textContent = todaySum.toLocaleString("vi-VN")+" đ";
+  sumYesterdayEl.textContent = ySum.toLocaleString("vi-VN")+" đ";
+  sumWeekEl.textContent = weekSum.toLocaleString("vi-VN")+" đ";
+  sumMonthEl.textContent = monthSum.toLocaleString("vi-VN")+" đ";
+}
+
+/* ========= Selected day sum (chip cạnh Date Picker) ========= */
+function updateSelectedDaySum(){
+  const s = rows.reduce((a,b)=>a+(Number(b.price)||0),0);
+  selectedSum.textContent = "Tổng ngày này: " + s.toLocaleString("vi-VN") + " đ";
+  updateDashboard(); // đồng thời làm tươi dashboard nếu có thay đổi
+}
+</script>
+</body>
+</html>
